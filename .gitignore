@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+target/
+
+# Environment and secrets
+.env
+.env.local
+*.env
+
+# Uploads
+uploads/*
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# IDE and OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Playwright & E2E artifacts
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
+frontend/playwright/.cache/
+test-results/
+playwright-report/
+
+# Vite build output
+dist/
+frontend/dist/
