@@ -1,133 +1,200 @@
 import { useState } from "react";
-import Modal from "../components/Modal";
-import { inputStyle, btnStyle } from "../utils/styles";
-import { apiFetch, authHeaders } from "../utils/api";
+import { Sparkles, MapPin, Briefcase } from "lucide-react";
+import { Modal } from "./ui/Modal";
+import { Input } from "./ui/Input";
+import { Textarea } from "./ui/Textarea";
+import { Button } from "./ui/Button";
+import { Chip } from "./ui/Chip";
+import { apiRequest, ApiError } from "../utils/api";
 
-const labelStyle = {
-  display: "block",
-  fontSize: 13,
-  fontWeight: 600,
-  color: "#374151",
-  marginBottom: 6,
-};
+const QUICK_SKILLS = [
+  "Java", "Spring Boot", "React", "Node.js", "Python",
+  "AWS", "Docker", "SQL", "TypeScript", "Kubernetes", "Microservices"
+];
 
 const JOB_TEMPLATES = {
-  "java": "Required Skills: Java, Spring Boot, Hibernate, REST APIs, Microservices, SQL, Git, JUnit.",
-  "frontend": "Required Skills: React.js, JavaScript, HTML5, CSS3, Tailwind CSS, Redux, Git.",
-  "react": "Required Skills: React.js, JavaScript, HTML5, CSS3, Tailwind CSS, Redux, Git.",
-  "backend": "Required Skills: Node.js, Express, MongoDB, REST APIs, Docker, SQL/NoSQL.",
-  "python": "Required Skills: Python, Django/Flask, REST APIs, PostgreSQL, Docker.",
-  "devops": "Required Skills: AWS/Azure, Docker, Kubernetes, Jenkins, CI/CD, Terraform, Linux.",
-  "data": "Required Skills: Python, Machine Learning, SQL, Pandas, TensorFlow."
+  java: "Required Skills: Java, Spring Boot, Hibernate, REST APIs, Microservices, SQL, Git, JUnit.",
+  frontend: "Required Skills: React, JavaScript, TypeScript, HTML, CSS, REST APIs, Git.",
+  react: "Required Skills: React, JavaScript, TypeScript, HTML, CSS, REST APIs, Git.",
+  backend: "Required Skills: Node.js, Express, MongoDB, REST APIs, Docker, SQL, Git.",
+  python: "Required Skills: Python, Django, REST APIs, PostgreSQL, Docker, Git.",
+  devops: "Required Skills: AWS, Docker, Kubernetes, Jenkins, CI/CD, Terraform, Linux.",
 };
 
 export default function AddJobModal({ onClose, showToast, onSaved }) {
-  const [form, setForm] = useState({ title: "", description: "", location: "" });
+  const [title, setTitle] = useState("");
+  const [location, setLocation] = useState("");
+  const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+
   const suggestedTemplate = (() => {
-    const t = form.title.toLowerCase();
+    const t = title.toLowerCase();
     for (const [key, template] of Object.entries(JOB_TEMPLATES)) {
       if (t.includes(key)) return template;
     }
     return null;
   })();
 
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+  const handleAddSkill = (skill) => {
+    if (!description.includes(skill)) {
+      setDescription((prev) => {
+        if (!prev.trim()) return `Required Skills: ${skill}`;
+        if (!prev.includes("Required Skills:")) return `${prev.trim()}\n\nRequired Skills: ${skill}`;
+        return `${prev.trim()}, ${skill}`;
+      });
+    }
+  };
 
-  const save = async () => {
-    if (!form.title.trim()) return showToast("Title is required", "error");
+  const handleApplyTemplate = () => {
+    if (suggestedTemplate) {
+      setDescription(suggestedTemplate);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
+    setFieldErrors({});
+
+    if (!title.trim()) {
+      setFieldErrors({ title: "Job title is required" });
+      return;
+    }
+
     setLoading(true);
     try {
-      await apiFetch("/jobs/add", {
+      await apiRequest("/jobs", {
         method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify(form),
+        body: {
+          title: title.trim(),
+          location: location.trim() || undefined,
+          description: description.trim() || undefined,
+        },
       });
-      showToast("Job added successfully");
-      onSaved();
+
+      if (showToast) showToast("Job opening posted successfully");
+      if (onSaved) onSaved();
       onClose();
-    } catch (e) {
-      showToast(e.message || "Failed to add job", "error");
+    } catch (err) {
+      if (err instanceof ApiError && err.fieldErrors && Object.keys(err.fieldErrors).length > 0) {
+        setFieldErrors(err.fieldErrors);
+      }
+      if (showToast) showToast(err.message || "Failed to create job", "error");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Modal title="Add Job Opening" onClose={onClose}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-        <div>
-          <label style={labelStyle}>Job Title *</label>
-          <input
-            style={inputStyle}
-            placeholder="e.g. Senior Frontend Engineer"
-            value={form.title}
-            onChange={set("title")}
-          />
-          {suggestedTemplate && !form.description && (
-            <button
-              onClick={() => setForm(f => ({ ...f, description: suggestedTemplate }))}
-              style={{
-                marginTop: 10, padding: "6px 12px", borderRadius: 20,
-                background: "#EFF6FF", color: "#2563EB", border: "1px solid #BFDBFE",
-                fontSize: 12, fontWeight: 600, cursor: "pointer",
-                display: "inline-flex", alignItems: "center", gap: 6, transition: "all 0.2s"
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "#DBEAFE"; e.currentTarget.style.borderColor = "#93C5FD"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "#EFF6FF"; e.currentTarget.style.borderColor = "#BFDBFE"; }}
-            >
-              Auto-fill recommended skills
-            </button>
-          )}
+    <Modal
+      open={true}
+      onClose={onClose}
+      title="Create Job Opening"
+      description="Post a new position for employees to refer trusted colleagues."
+      size="lg"
+      footer={
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", width: "100%" }}>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button
+            id="submit-job-btn"
+            variant="primary"
+            onClick={handleSubmit}
+            loading={loading}
+          >
+            Post Job
+          </Button>
         </div>
-        <div>
-          <label style={labelStyle}>Location</label>
-          <input
-            style={inputStyle}
-            placeholder="e.g. Bangalore, India (Remote OK)"
-            value={form.location}
-            onChange={set("location")}
-          />
-        </div>
-        <div>
-          <label style={labelStyle}>Description</label>
-          <textarea
-            style={{ ...inputStyle, resize: "vertical", minHeight: 96, lineHeight: 1.6 }}
-            placeholder="Describe the role, requirements, and responsibilities…"
-            value={form.description}
-            onChange={set("description")}
-          />
-        </div>
-      </div>
+      }
+    >
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <Input
+          id="job-title"
+          label="Job Title"
+          placeholder="e.g. Senior Backend Engineer"
+          icon={Briefcase}
+          required
+          autoFocus
+          maxLength={150}
+          hint={`${title.length}/150`}
+          value={title}
+          error={fieldErrors.title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
 
-      <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 8 }}>
-        <button
-          style={btnStyle("secondary")}
-          onClick={onClose}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "#E2E8F0"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "#F1F5F9"; }}
-        >
-          Cancel
-        </button>
-        <button
-          style={{ ...btnStyle("primary"), minWidth: 100 }}
-          onClick={save}
-          disabled={loading}
-          onMouseEnter={(e) => { if (!loading) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(37,99,235,0.45)"; } }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(37,99,235,0.35)"; }}
-        >
-          {loading ? (
-            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{
-                display: "inline-block", width: 14, height: 14,
-                border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff",
-                borderRadius: "50%", animation: "spin 0.7s linear infinite",
-              }} />
-              Saving…
-            </span>
-          ) : "Add Job"}
-        </button>
-      </div>
+        <Input
+          id="job-location"
+          label="Location"
+          placeholder="e.g. Bengaluru, India (Hybrid) or Remote"
+          icon={MapPin}
+          maxLength={150}
+          hint={`${location.length}/150`}
+          value={location}
+          error={fieldErrors.location}
+          onChange={(e) => setLocation(e.target.value)}
+        />
+
+        {suggestedTemplate && !description && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <button
+              type="button"
+              onClick={handleApplyTemplate}
+              style={{
+                background: "var(--brand-50)",
+                color: "var(--brand-700)",
+                border: "1px solid var(--brand-200)",
+                borderRadius: "var(--radius-full)",
+                padding: "5px 12px",
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                transition: "all var(--duration-hover) var(--ease)",
+              }}
+            >
+              <Sparkles size={13} color="var(--brand-600)" />
+              <span>Auto-fill recommended skills template</span>
+            </button>
+          </div>
+        )}
+
+        <Textarea
+          id="job-description"
+          label="Job Description & Requirements"
+          placeholder="Detailed role responsibilities and required candidate skills..."
+          rows={5}
+          maxLength={5000}
+          value={description}
+          error={fieldErrors.description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+
+        {/* Quick Skill Tags */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)" }}>
+            Quick-add required skills:
+          </span>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {QUICK_SKILLS.map((skill) => {
+              const isAdded = description.includes(skill);
+              return (
+                <Chip
+                  key={skill}
+                  size="sm"
+                  variant={isAdded ? "brand" : "neutral"}
+                  onClick={() => handleAddSkill(skill)}
+                  style={{ cursor: "pointer", opacity: isAdded ? 0.7 : 1 }}
+                >
+                  {isAdded ? `✓ ${skill}` : `+ ${skill}`}
+                </Chip>
+              );
+            })}
+          </div>
+        </div>
+      </form>
     </Modal>
   );
 }

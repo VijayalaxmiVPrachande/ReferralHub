@@ -1,8 +1,13 @@
+import { isValidElement } from "react";
+import { Button } from "./Button";
+
 export function EmptyState({
   title = "No items found",
   description = "Get started by adding your first entry.",
   action,
-  icon,
+  actionLabel,
+  onAction,
+  icon: Icon,
   style = {},
 }) {
   return (
@@ -35,8 +40,8 @@ export function EmptyState({
           marginBottom: 16,
         }}
       >
-        {icon ? (
-          icon
+        {Icon ? (
+          isValidElement(Icon) ? Icon : <Icon size={28} />
         ) : (
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <rect width="18" height="18" x="3" y="3" rx="2" />
@@ -48,11 +53,16 @@ export function EmptyState({
       <h3 style={{ fontSize: 17, fontWeight: 700, color: "var(--text)", marginBottom: 6 }}>
         {title}
       </h3>
-      <p style={{ fontSize: 14, color: "var(--text-muted)", maxWidth: 360, lineHeight: 1.5, marginBottom: action ? 20 : 0 }}>
+      <p style={{ fontSize: 14, color: "var(--text-muted)", maxWidth: 360, lineHeight: 1.5, marginBottom: (action || actionLabel) ? 20 : 0 }}>
         {description}
       </p>
 
       {action && <div>{action}</div>}
+      {!action && actionLabel && onAction && (
+        <Button variant="primary" onClick={onAction}>
+          {actionLabel}
+        </Button>
+      )}
     </div>
   );
 }

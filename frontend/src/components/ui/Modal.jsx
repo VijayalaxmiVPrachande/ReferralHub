@@ -3,14 +3,17 @@ import { X } from "lucide-react";
 
 export function Modal({
   isOpen,
+  open,
   onClose,
   title,
   subtitle,
   children,
   maxWidth = 540,
   triggerRef,
+  footer,
 }) {
   const modalRef = useRef(null);
+  const show = open !== undefined ? open : (isOpen !== undefined ? isOpen : true);
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -46,7 +49,7 @@ export function Modal({
   );
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!show) return;
 
     // Focus first element or modal container
     const prevActiveElement = document.activeElement;
@@ -72,9 +75,9 @@ export function Modal({
         prevActiveElement.focus();
       }
     };
-  }, [isOpen, handleKeyDown, triggerRef]);
+  }, [show, handleKeyDown, triggerRef]);
 
-  if (!isOpen) return null;
+  if (!show) return null;
 
   return (
     <div
@@ -136,11 +139,11 @@ export function Modal({
           }}
         >
           <div>
-            <h2 id="modal-title" style={{ fontSize: 18, fontWeight: 700 }}>
+            <h2 id="modal-title" style={{ fontSize: 18, fontWeight: 700, margin: 0, fontFamily: "Plus Jakarta Sans, sans-serif" }}>
               {title}
             </h2>
             {subtitle && (
-              <p style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
+              <p style={{ fontSize: 13, color: "var(--text-muted)", margin: "4px 0 0 0" }}>
                 {subtitle}
               </p>
             )}
@@ -158,6 +161,9 @@ export function Modal({
               borderRadius: "var(--radius-sm)",
               color: "var(--text-muted)",
               transition: "background var(--duration-hover) var(--ease)",
+              border: "none",
+              background: "none",
+              cursor: "pointer",
             }}
           >
             <X size={18} />
@@ -168,6 +174,22 @@ export function Modal({
         <div style={{ padding: "20px 24px", overflowY: "auto", flex: 1 }}>
           {children}
         </div>
+
+        {/* Optional Footer */}
+        {footer && (
+          <div
+            style={{
+              padding: "16px 24px",
+              borderTop: "1px solid var(--border)",
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: 10,
+              backgroundColor: "var(--surface-2)",
+            }}
+          >
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );
