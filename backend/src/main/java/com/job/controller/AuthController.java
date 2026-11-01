@@ -1,17 +1,22 @@
 package com.job.controller;
 
+import java.security.Principal;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.job.dto.AuthRequest;
 import com.job.dto.AuthResponse;
-import com.job.entity.User;
+import com.job.dto.LoginRequest;
+import com.job.dto.MeResponse;
+import com.job.dto.MessageResponse;
+import com.job.dto.RegisterRequest;
 import com.job.service.AuthService;
-import com.job.util.JwtUtil;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,26 +25,24 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
-	
+
     private final AuthService service;
 
-    private final JwtUtil jwt;
-
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody @Valid User user) {
-        return ResponseEntity.ok(service.register(user));
+    public ResponseEntity<MessageResponse> register(@RequestBody @Valid RegisterRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.register(req));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody @Valid AuthRequest req) {
+    public ResponseEntity<AuthResponse> login(@RequestBody @Valid LoginRequest req) {
         return ResponseEntity.ok(service.login(req));
     }
 
-    @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestParam String token) {
-        String email = jwt.extractEmail(token);
-        return ResponseEntity.ok(
-            new AuthResponse(jwt.generate(email),null)
-        );
+    @GetMapping("/me")
+    public ResponseEntity<MeResponse> me(Principal principal) {
+        if (principal == null || principal.getName() == null) {
+            throw new BadCredentialsException("Unauthenticated");
+        }
+        return ResponseEntity.ok(service.getMe(principal.getName()));
     }
 }

@@ -1,3 +1,5 @@
+import { isValidElement } from "react";
+
 export function StatCard({
   label,
   value,
@@ -60,7 +62,7 @@ export function StatCard({
         </span>
         {Icon && (
           <div style={{ color: accentColor, opacity: 0.85 }}>
-            {typeof Icon === "function" ? <Icon size={16} /> : Icon}
+            {isValidElement(Icon) ? Icon : <Icon size={16} />}
           </div>
         )}
       </div>

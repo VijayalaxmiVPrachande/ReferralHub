@@ -2,13 +2,17 @@ package com.job.util;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.job.dto.ErrorResponse;
 import com.job.entity.User;
 import com.job.repository.UserRepository;
 
@@ -24,6 +28,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserRepository userRepo;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     protected void doFilterInternal(HttpServletRequest req,
@@ -33,16 +38,14 @@ public class JwtFilter extends OncePerRequestFilter {
 
         String header = req.getHeader("Authorization");
 
-        // Try Authorization header first, then fall back to "token" query param (for file downloads in new tabs)
-        String token = null;
-        if (header != null && header.startsWith("Bearer ")) {
-            token = header.substring(7);
-        } else {
-            token = req.getParameter("token");
+        // Strictly check Authorization header with Bearer token (no query param fallback)
+        if (header == null || !header.startsWith("Bearer ")) {
+            chain.doFilter(req, res);
+            return;
         }
 
-        // No token — skip filter entirely, let Spring Security handle access control
-        if (token == null || token.isBlank()) {
+        String token = header.substring(7).trim();
+        if (token.isEmpty()) {
             chain.doFilter(req, res);
             return;
         }
@@ -57,17 +60,23 @@ public class JwtFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(
                                 email,
                                 null,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
+                                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
                         );
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
 
         } catch (Exception e) {
-            // Invalid or expired token — respond with 401, do NOT propagate as 500
+            // Invalid or expired token -> respond with standardized 401 ErrorResponse
             res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            res.setContentType("application/json");
-            res.getWriter().write("{\"error\": \"Invalid or expired token\"}");
-            return; // stop filter chain — don't call chain.doFilter
+            res.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            res.setCharacterEncoding("UTF-8");
+            ErrorResponse error = new ErrorResponse(
+                    HttpServletResponse.SC_UNAUTHORIZED,
+                    "Invalid or expired token",
+                    Map.of()
+            );
+            res.getWriter().write(objectMapper.writeValueAsString(error));
+            return;
         }
 
         chain.doFilter(req, res);

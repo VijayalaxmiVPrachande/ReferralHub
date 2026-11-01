@@ -1,7 +1,7 @@
 # ReferralHub - Progress Log
 
 ## Current Status
-- **Current Phase**: Phase 0 - Baseline, Docs, Config
+- **Current Phase**: Phase 3 - Slice B: Jobs
 - **Active Branch**: `finalize`
 
 ---
@@ -11,8 +11,8 @@
 |---|---|---|---|---|---|
 | **Phase 0: Baseline, Docs, Config** | Complete | Complete | Complete | YES | Complete |
 | **Phase 1: Design System & Shell** | Complete | Complete | Complete | YES | Complete |
-| **Phase 2: Slice A - Auth** | In Progress | In Progress | In Progress | Pending | In Progress |
-| **Phase 3: Slice B - Jobs** | Not Started | Not Started | Not Started | Pending | Planned |
+| **Phase 2: Slice A - Auth** | Complete | Complete | Complete | YES | Complete |
+| **Phase 3: Slice B - Jobs** | In Progress | In Progress | In Progress | Pending | In Progress |
 | **Phase 4: Slice C - Referrals & ATS** | Not Started | Not Started | Not Started | Pending | Planned |
 | **Phase 5: Slice D - Recruiter Emails** | Not Started | Not Started | Not Started | Pending | Planned |
 | **Phase 6: Final Polish & Verification**| Pending | Pending | Pending | Pending | Planned |

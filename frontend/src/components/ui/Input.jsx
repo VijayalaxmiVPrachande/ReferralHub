@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, isValidElement } from "react";
 
 export const Input = forwardRef(function Input(
   {
@@ -51,7 +51,7 @@ export const Input = forwardRef(function Input(
               alignItems: "center",
             }}
           >
-            {typeof Icon === "function" ? <Icon size={16} /> : Icon}
+            {isValidElement(Icon) ? Icon : <Icon size={16} />}
           </div>
         )}
 

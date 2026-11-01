@@ -1,8 +1,13 @@
 package com.job.config;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -29,33 +34,42 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
+    private final DelegatedAuthenticationEntryPoint authEntryPoint;
+    private final DelegatedAccessDeniedHandler accessDeniedHandler;
+
+    @Value("${app.cors.origins:http://localhost:5173,http://localhost:3000,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:8080}")
+    private String allowedOrigins;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
         http
                 .csrf(csrf -> csrf.disable())
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
-
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(authEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
+                )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/register", "/auth/login").permitAll()
                         .requestMatchers(
-                                "/auth/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/v3/api-docs",
                                 "/swagger-resources/**",
-                                "/webjars/**",
-                                "/api/files/**")
-                        .permitAll()
-                        .requestMatchers("/jobs/add").hasRole("RECRUITER")
-                        .requestMatchers("/referrals/**").hasAnyRole("EMPLOYEE", "RECRUITER")
-                        .anyRequest().authenticated())
-
+                                "/webjars/**"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/jobs", "/jobs/add").hasRole("RECRUITER")
+                        .requestMatchers(HttpMethod.PATCH, "/referrals/*/status").hasRole("RECRUITER")
+                        .requestMatchers(HttpMethod.GET, "/referrals/*/email-draft").hasRole("RECRUITER")
+                        .requestMatchers(HttpMethod.POST, "/referrals/*/emails").hasRole("RECRUITER")
+                        .requestMatchers(HttpMethod.GET, "/referrals/*/emails").hasRole("RECRUITER")
+                        .requestMatchers(HttpMethod.POST, "/referrals").hasRole("EMPLOYEE")
+                        .anyRequest().authenticated()
+                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -65,16 +79,14 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Allow all common dev ports — add yours here if different
-        config.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",
-                "http://localhost:5173",
-                "http://localhost:8080",
-                "http://127.0.0.1:5173",
-                "http://127.0.0.1:8080"));
+        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList());
 
+        config.setAllowedOrigins(origins);
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With", "Accept"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
@@ -91,9 +103,9 @@ public class SecurityConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("JobApp API")
+                        .title("ReferralHub API")
                         .version("1.0")
-                        .description("API documentation for Job System"))
+                        .description("API documentation for ReferralHub"))
                 .addSecurityItem(new SecurityRequirement().addList("Bearer Authentication"))
                 .components(new Components().addSecuritySchemes("Bearer Authentication",
                         new SecurityScheme()
@@ -102,5 +114,4 @@ public class SecurityConfig {
                                 .scheme("bearer")
                                 .bearerFormat("JWT")));
     }
-
 }

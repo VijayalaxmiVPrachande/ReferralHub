@@ -1,11 +1,8 @@
 package com.job.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-
-@Data
-@AllArgsConstructor
-public class AuthResponse {
-    private String accessToken;
-    private String role;
-}
+public record AuthResponse(
+        String accessToken,
+        String role,
+        String name,
+        String email
+) {}

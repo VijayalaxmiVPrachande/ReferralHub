@@ -1,10 +1,13 @@
 package com.job.service;
 
-import com.job.dto.AuthRequest;
 import com.job.dto.AuthResponse;
-import com.job.entity.User;
+import com.job.dto.LoginRequest;
+import com.job.dto.MeResponse;
+import com.job.dto.MessageResponse;
+import com.job.dto.RegisterRequest;
 
 public interface AuthService {
-    AuthResponse login(AuthRequest request);
-    String register(User user);
+    MessageResponse register(RegisterRequest request);
+    AuthResponse login(LoginRequest request);
+    MeResponse getMe(String email);
 }

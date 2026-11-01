@@ -1,3 +1,5 @@
+import { isValidElement } from "react";
+
 export function Tabs({
   tabs = [],
   activeTab,
@@ -45,7 +47,7 @@ export function Tabs({
               background: "transparent",
             }}
           >
-            {Icon && (typeof Icon === "function" ? <Icon size={16} /> : Icon)}
+            {Icon && (isValidElement(Icon) ? Icon : <Icon size={16} />)}
             <span>{tab.label}</span>
             {tab.count !== undefined && (
               <span

@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, isValidElement } from "react";
 import { Loader2 } from "lucide-react";
 
 export const Button = forwardRef(function Button(
@@ -88,7 +88,7 @@ export const Button = forwardRef(function Button(
         </>
       ) : (
         <>
-          {Icon && (typeof Icon === "function" ? <Icon size={isSm ? 14 : 16} /> : Icon)}
+          {Icon && (isValidElement(Icon) ? Icon : <Icon size={isSm ? 14 : 16} />)}
           {children}
         </>
       )}
