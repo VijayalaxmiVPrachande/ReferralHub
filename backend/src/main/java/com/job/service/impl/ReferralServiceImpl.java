@@ -42,6 +42,7 @@ import com.job.repository.CandidateRepository;
 import com.job.repository.JobRepository;
 import com.job.repository.ReferralRepository;
 import com.job.repository.UserRepository;
+import com.job.service.EmailService;
 import com.job.service.ReferralService;
 import com.job.service.StorageService;
 
@@ -68,7 +69,7 @@ public class ReferralServiceImpl implements ReferralService {
     private final CandidateRepository candRepo;
     private final JobRepository jobRepo;
     private final UserRepository userRepo;
-    private final EmailServiceImpl emailService;
+    private final EmailService emailService;
     private final StorageService storageService;
 
     @Override

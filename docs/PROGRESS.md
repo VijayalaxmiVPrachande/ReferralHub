@@ -13,8 +13,8 @@
 | **Phase 1: Design System & Shell** | Complete | Complete | Complete | YES | Complete |
 | **Phase 2: Slice A - Auth** | Complete | Complete | Complete | YES | Complete |
 | **Phase 3: Slice B - Jobs** | Complete | Complete | Complete | YES | Complete |
-| **Phase 4: Slice C - Referrals & ATS** | In Progress | In Progress | In Progress | Pending | In Progress |
-| **Phase 5: Slice D - Recruiter Emails** | Not Started | Not Started | Not Started | Pending | Planned |
+| **Phase 4: Slice C - Referrals & ATS** | Complete | Complete | Complete | YES | Complete |
+| **Phase 5: Slice D - Recruiter Emails** | In Progress | In Progress | In Progress | Pending | In Progress |
 | **Phase 6: Final Polish & Verification**| Pending | Pending | Pending | Pending | Planned |
 
 ---

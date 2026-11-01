@@ -20,6 +20,7 @@ import {
   Phone,
   Calendar,
   RotateCw,
+  Send,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useToast } from "../context/ToastContext";
@@ -34,6 +35,7 @@ import { Drawer } from "../components/ui/Drawer";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Skeleton } from "../components/ui/Skeleton";
 import AtsScorecard from "../components/AtsScorecard";
+import EmailModal from "../components/EmailModal";
 import { apiRequest } from "../utils/api";
 
 const STATUSES = ["REFERRED", "IN_REVIEW", "NEXT_ROUND", "SELECTED", "REJECTED"];
@@ -70,6 +72,9 @@ export default function ReferralsTab({
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [downloadingResume, setDownloadingResume] = useState(false);
   const [previewingResume, setPreviewingResume] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [emailHistory, setEmailHistory] = useState([]);
+  const [loadingEmails, setLoadingEmails] = useState(false);
   // Load statistics
   const loadStats = useCallback(async () => {
     try {
@@ -144,14 +149,44 @@ export default function ReferralsTab({
     setPage(0);
   };
 
+  const fetchEmailHistory = useCallback(
+    async (refId) => {
+      if (!isRecruiter || !refId) return;
+      setLoadingEmails(true);
+      try {
+        const data = await apiRequest(`/referrals/${refId}/emails`);
+        setEmailHistory(Array.isArray(data) ? data : []);
+      } catch {
+        setEmailHistory([]);
+      } finally {
+        setLoadingEmails(false);
+      }
+    },
+    [isRecruiter]
+  );
+
   const openDrawer = (ref) => {
     setSelectedReferral(ref);
     setIsDrawerOpen(true);
+    fetchEmailHistory(ref.id);
   };
 
   const closeDrawer = () => {
     setIsDrawerOpen(false);
     setSelectedReferral(null);
+    setEmailHistory([]);
+  };
+
+  const handleEmailSent = (sentEmail) => {
+    if (selectedReferral?.id) {
+      fetchEmailHistory(selectedReferral.id);
+    }
+    fetchReferrals(page, statusFilter, sortBy, search);
+    loadStats();
+    if (parentRefresh) parentRefresh();
+    if (sentEmail?.type && sentEmail.type !== "CUSTOM" && sentEmail.status === "SENT") {
+      setSelectedReferral((prev) => (prev ? { ...prev, status: sentEmail.type } : null));
+    }
   };
 
   // Status transition handler for recruiters
@@ -854,9 +889,21 @@ export default function ReferralsTab({
                 padding: 20,
               }}
             >
-              <h4 style={{ margin: "0 0 16px 0", fontSize: 14, fontWeight: 700, color: "var(--text)" }}>
-                Candidate Information
-              </h4>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>
+                  Candidate Information
+                </h4>
+                {isRecruiter && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    icon={Mail}
+                    onClick={() => setIsEmailModalOpen(true)}
+                  >
+                    Email Candidate
+                  </Button>
+                )}
+              </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <User size={16} style={{ color: "var(--text-muted)" }} />
@@ -976,9 +1023,168 @@ export default function ReferralsTab({
                 </p>
               )}
             </div>
+
+            {/* Recruiter Candidate Email Outreach History */}
+            {isRecruiter && (
+              <div
+                style={{
+                  borderRadius: "var(--radius-lg)",
+                  border: "1px solid var(--border)",
+                  backgroundColor: "var(--surface)",
+                  padding: 20,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 16,
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <Mail size={18} style={{ color: "var(--brand-600)" }} />
+                    <h4 style={{ margin: 0, fontSize: 14, fontWeight: 700, color: "var(--text)" }}>
+                      Outreach History ({emailHistory.length})
+                    </h4>
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    icon={Send}
+                    onClick={() => setIsEmailModalOpen(true)}
+                  >
+                    Compose Email
+                  </Button>
+                </div>
+
+                {loadingEmails ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <Skeleton height={50} />
+                    <Skeleton height={50} />
+                  </div>
+                ) : emailHistory.length === 0 ? (
+                  <div
+                    style={{
+                      padding: "24px 16px",
+                      textAlign: "center",
+                      borderRadius: "var(--radius-md)",
+                      backgroundColor: "var(--surface-2)",
+                      border: "1px dashed var(--border)",
+                    }}
+                  >
+                    <Mail size={24} style={{ color: "var(--text-faint)", margin: "0 auto 8px" }} />
+                    <p style={{ margin: 0, fontSize: 13, color: "var(--text-muted)" }}>
+                      No outreach emails sent to this candidate yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {emailHistory.map((item) => (
+                      <div
+                        key={item.id}
+                        style={{
+                          padding: 14,
+                          borderRadius: "var(--radius-md)",
+                          backgroundColor: "var(--surface-2)",
+                          border: "1px solid var(--border)",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 8,
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <span
+                              data-testid="email-type-badge"
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                padding: "2px 8px",
+                                borderRadius: "var(--radius-full)",
+                                backgroundColor: "var(--surface-3)",
+                                color: "var(--text)",
+                                border: "1px solid var(--border)",
+                              }}
+                            >
+                              {item.type.replace(/_/g, " ")}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontWeight: 700,
+                                padding: "2px 8px",
+                                borderRadius: "var(--radius-full)",
+                                backgroundColor: item.status === "SENT" ? "var(--status-selected-subtle)" : "var(--status-rejected-subtle)",
+                                color: item.status === "SENT" ? "var(--status-selected-solid)" : "var(--status-rejected-solid)",
+                                border: `1px solid ${item.status === "SENT" ? "var(--status-selected-border)" : "var(--status-rejected-border)"}`,
+                              }}
+                            >
+                              {item.status}
+                            </span>
+                          </div>
+                          <span style={{ fontSize: 12, color: "var(--text-faint)" }}>
+                            {item.sentAt ? new Date(item.sentAt).toLocaleString() : ""}
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
+                          {item.subject}
+                        </div>
+
+                        <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                          Sent by {item.sentBy?.name || "Recruiter"} &lt;{item.sentBy?.email}&gt; to {item.toEmail}
+                        </div>
+
+                        {item.errorMessage && (
+                          <div
+                            style={{
+                              fontSize: 12,
+                              color: "var(--status-rejected-solid)",
+                              backgroundColor: "var(--status-rejected-subtle)",
+                              padding: "6px 10px",
+                              borderRadius: "var(--radius-sm)",
+                              border: "1px solid var(--status-rejected-border)",
+                            }}
+                          >
+                            Error: {item.errorMessage}
+                          </div>
+                        )}
+
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: "var(--text)",
+                            backgroundColor: "var(--surface)",
+                            padding: "8px 12px",
+                            borderRadius: "var(--radius-sm)",
+                            border: "1px solid var(--border)",
+                            whiteSpace: "pre-wrap",
+                            maxHeight: 120,
+                            overflowY: "auto",
+                          }}
+                        >
+                          {item.body}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </Drawer>
+
+      {/* 5. Recruiter Email Outreach Modal */}
+      {isRecruiter && isEmailModalOpen && (
+        <EmailModal
+          isOpen={isEmailModalOpen}
+          onClose={() => setIsEmailModalOpen(false)}
+          referral={selectedReferral}
+          onEmailSent={handleEmailSent}
+        />
+      )}
     </div>
   );
 }

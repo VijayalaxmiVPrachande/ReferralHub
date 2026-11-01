@@ -42,6 +42,7 @@ import com.job.enums.Role;
 import com.job.enums.Status;
 import com.job.repository.CandidateRepository;
 import com.job.repository.JobRepository;
+import com.job.repository.ReferralEmailRepository;
 import com.job.repository.ReferralRepository;
 import com.job.repository.UserRepository;
 
@@ -55,6 +56,9 @@ class ReferralControllerTest {
     private MockMvc mockMvc;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Autowired
+    private ReferralEmailRepository referralEmailRepository;
 
     @Autowired
     private ReferralRepository referralRepository;
@@ -79,6 +83,7 @@ class ReferralControllerTest {
                 .apply(springSecurity())
                 .build();
 
+        referralEmailRepository.deleteAll();
         referralRepository.deleteAll();
         candidateRepository.deleteAll();
         jobRepository.deleteAll();
