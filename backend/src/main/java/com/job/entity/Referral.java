@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 import com.job.enums.Status;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -11,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,6 +23,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(name = "referral")
 public class Referral {
 
     @Id
@@ -41,13 +44,15 @@ public class Referral {
 
     private Integer atsScore;
     
-    @jakarta.persistence.Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String matchedSkills;
     
-    @jakarta.persistence.Column(columnDefinition = "TEXT")
+    @Column(columnDefinition = "TEXT")
     private String missingSkills;
     
     private String atsLabel;
 
     private LocalDateTime createdTime;
+
+    private LocalDateTime lastEmailAt;
 }

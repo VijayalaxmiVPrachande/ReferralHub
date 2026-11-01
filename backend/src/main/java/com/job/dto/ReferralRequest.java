@@ -2,14 +2,12 @@ package com.job.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
 
-@Data
-public class ReferralRequest {
+public record ReferralRequest(
+        @NotNull(message = "Job ID is required")
+        Long jobId,
 
-    @NotNull
-    private Long jobId;
-
-    @Valid
-    private CandidateDTO candidate;
-}
+        @NotNull(message = "Candidate details are required")
+        @Valid
+        CandidateDTO candidate
+) {}

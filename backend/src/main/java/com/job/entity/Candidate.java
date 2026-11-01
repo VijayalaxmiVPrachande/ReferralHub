@@ -5,10 +5,18 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "candidate")
 public class Candidate {
 
     @Id
@@ -17,12 +25,21 @@ public class Candidate {
 
     private String name;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String email;
 
     private String phone;
-    
- // Add to Candidate.java
+
     private String resumeUrl;
-    private String resumePublicId;
+
+    @Column(name = "resume_public_id")
+    private String storedFilename;
+
+    public String getResumePublicId() {
+        return storedFilename;
+    }
+
+    public void setResumePublicId(String resumePublicId) {
+        this.storedFilename = resumePublicId;
+    }
 }

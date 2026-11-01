@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 
 export function Chip({
   children,
+  label,
   variant = "default",
   onRemove,
   onClick,
@@ -74,7 +75,7 @@ export function Chip({
           color: selectedVariantStyle.color,
         }}
       >
-        <span>{children}</span>
+        <span>{children || label}</span>
         {onRemove && (
           <span
             onClick={(e) => {
@@ -103,7 +104,7 @@ export function Chip({
 
   return (
     <span className={`rh-chip ${className}`} style={combinedStyle}>
-      <span>{children}</span>
+      <span>{children || label}</span>
       {onRemove && (
         <button
           type="button"

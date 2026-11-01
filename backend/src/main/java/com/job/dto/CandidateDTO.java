@@ -3,17 +3,15 @@ package com.job.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
-import lombok.Data;
 
-@Data
-public class CandidateDTO {
+public record CandidateDTO(
+        @NotBlank(message = "Candidate name is required")
+        String name,
 
-    @NotBlank
-    private String name;
+        @NotBlank(message = "Candidate email is required")
+        @Email(message = "Invalid candidate email format")
+        String email,
 
-    @Email @NotBlank
-    private String email;
-
-    @Pattern(regexp = "^[0-9]{10}$")
-    private String phone;
-}
+        @Pattern(regexp = "^$|^[0-9+\\-\\s]{7,15}$", message = "Invalid phone number format")
+        String phone
+) {}

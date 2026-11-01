@@ -1,17 +1,20 @@
 package com.job.service;
 
-import org.springframework.data.domain.Page;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.job.dto.PagedResponse;
 import com.job.dto.ReferralRequest;
-import com.job.entity.Referral;
+import com.job.dto.ReferralResponse;
+import com.job.dto.ReferralStatsResponse;
 import com.job.enums.Status;
 
 public interface ReferralService {
-    ResponseEntity<?> create(ReferralRequest req, MultipartFile resume, String email);
-    Page<Referral> getAll(int page, int size, String email);
-    Referral getOne(Long id);
-    ResponseEntity<?> updateStatus(Long id, Status status);
-    ResponseEntity<?> downloadResume(Long id);
+    ReferralResponse create(ReferralRequest req, MultipartFile resume, String email);
+    PagedResponse<ReferralResponse> getAll(int page, int size, String sort, Status status, String q, String email);
+    ReferralResponse getOne(Long id, String email);
+    ReferralResponse updateStatus(Long id, Status status, String email);
+    ReferralStatsResponse getStats(String email);
+    Resource loadResume(Long id, String email);
+    String getResumeFilename(Long id, String email);
 }
