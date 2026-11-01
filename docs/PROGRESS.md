@@ -10,8 +10,8 @@
 | Slice | Backend | Frontend | Tests | Gate R4 Passed | Status |
 |---|---|---|---|---|---|
 | **Phase 0: Baseline, Docs, Config** | Complete | Complete | Complete | YES | Complete |
-| **Phase 1: Design System & Shell** | N/A | In Progress | In Progress | Pending | In Progress |
-| **Phase 2: Slice A - Auth** | Not Started | Not Started | Not Started | Pending | Planned |
+| **Phase 1: Design System & Shell** | Complete | Complete | Complete | YES | Complete |
+| **Phase 2: Slice A - Auth** | In Progress | In Progress | In Progress | Pending | In Progress |
 | **Phase 3: Slice B - Jobs** | Not Started | Not Started | Not Started | Pending | Planned |
 | **Phase 4: Slice C - Referrals & ATS** | Not Started | Not Started | Not Started | Pending | Planned |
 | **Phase 5: Slice D - Recruiter Emails** | Not Started | Not Started | Not Started | Pending | Planned |

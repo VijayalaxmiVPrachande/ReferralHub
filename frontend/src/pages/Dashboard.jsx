@@ -1,26 +1,32 @@
 import { useState, useCallback, useEffect } from "react";
-import Header      from "../components/Header";
-import Footer      from "../components/Footer";
-import JobsTab     from "./JobsTab";
+import { Plus } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { useToast } from "../context/ToastContext";
+import { AppShell } from "../components/layout/AppShell";
+import { Button } from "../components/ui/Button";
+import JobsTab from "./JobsTab";
 import ReferralsTab from "./ReferralsTab";
-import { apiFetch, authHeaders } from "../utils/api";
+import { apiRequest } from "../utils/api";
 
-export default function Dashboard({ user, showToast, onLogout }) {
-  const [tab, setTab]             = useState("jobs");
-  const [jobs, setJobs]           = useState([]);
+export default function Dashboard() {
+  const { isRecruiter } = useAuth();
+  const { showToast } = useToast();
+
+  const [tab, setTab] = useState("jobs");
+  const [jobs, setJobs] = useState([]);
   const [referrals, setReferrals] = useState([]);
   const [loadingJobs, setLoadingJobs] = useState(false);
   const [loadingRefs, setLoadingRefs] = useState(false);
-  const [showAddJob, setShowAddJob]   = useState(false);
-  const [showRefer, setShowRefer]     = useState(false);
+  const [showAddJob, setShowAddJob] = useState(false);
+  const [showRefer, setShowRefer] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
-  const [refPage, setRefPage]         = useState(0);
+  const [refPage, setRefPage] = useState(0);
 
   const loadJobs = useCallback(async () => {
     setLoadingJobs(true);
     try {
-      const data = await apiFetch("/jobs", { headers: authHeaders() });
-      setJobs(data || []);
+      const data = await apiRequest("/jobs");
+      setJobs(Array.isArray(data) ? data : []);
     } catch {
       showToast("Failed to load jobs", "error");
     } finally {
@@ -28,24 +34,32 @@ export default function Dashboard({ user, showToast, onLogout }) {
     }
   }, [showToast]);
 
-  const loadReferrals = useCallback(async (p = 0) => {
-    setLoadingRefs(true);
-    try {
-      const data = await apiFetch(`/referrals?page=${p}&size=10`, { headers: authHeaders() });
-      setReferrals(Array.isArray(data) ? data : (data?.content ?? []));
-    } catch {
-      showToast("Failed to load referrals", "error");
-    } finally {
-      setLoadingRefs(false);
-    }
-  }, [showToast]);
+  const loadReferrals = useCallback(
+    async (p = 0) => {
+      setLoadingRefs(true);
+      try {
+        const data = await apiRequest(`/referrals?page=${p}&size=10`);
+        setReferrals(Array.isArray(data) ? data : data?.content ?? []);
+      } catch {
+        showToast("Failed to load referrals", "error");
+      } finally {
+        setLoadingRefs(false);
+      }
+    },
+    [showToast]
+  );
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => { loadJobs(); }, [loadJobs]);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (tab === "referrals") loadReferrals(refPage);
-  }, [tab, refPage, loadReferrals]);
+    loadJobs();
+  }, [loadJobs]);
+
+  const handleTabChange = (newTab) => {
+    setTab(newTab);
+    if (newTab === "referrals" && referrals.length === 0) {
+      loadReferrals(refPage);
+    }
+  };
 
   const handleRefer = (job) => {
     setSelectedJob(job);
@@ -58,46 +72,49 @@ export default function Dashboard({ user, showToast, onLogout }) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: "var(--bg)" }}>
-      <Header tab={tab} setTab={setTab} user={user} onLogout={onLogout} />
-
-      <main style={{
-        flex: 1,
-        maxWidth: 1100,
-        width: "100%",
-        margin: "0 auto",
-        padding: "2rem 24px",
-        animation: "fadeIn 0.3s ease",
-      }}>
-        {tab === "jobs" && (
-          <JobsTab
-            jobs={jobs}
-            loading={loadingJobs}
-            onRefresh={loadJobs}
-            showToast={showToast}
-            showAddJob={showAddJob}
-            setShowAddJob={setShowAddJob}
-            onRefer={handleRefer}
-            selectedJob={selectedJob}
-            showRefer={showRefer}
-            setShowRefer={setShowRefer}
-            onJobAdded={loadJobs}
-          />
-        )}
-        {tab === "referrals" && (
-          <ReferralsTab
-            referrals={referrals}
-            loading={loadingRefs}
-            page={refPage}
-            setPage={handleRefPage}
-            onRefresh={() => loadReferrals(refPage)}
-            showToast={showToast}
-            userRole={user?.role}
-          />
-        )}
-      </main>
-
-      <Footer />
-    </div>
+    <AppShell
+      activeTab={tab}
+      onTabChange={handleTabChange}
+      pageTitle={tab === "jobs" ? "Job Openings" : isRecruiter ? "All Candidate Referrals" : "My Referrals"}
+      pageSubtitle={
+        tab === "jobs"
+          ? "Explore active openings and submit qualified candidate referrals."
+          : "Review referral application statuses, ATS match scorecards, and resumes."
+      }
+      pageAction={
+        tab === "jobs" && isRecruiter ? (
+          <Button icon={Plus} onClick={() => setShowAddJob(true)}>
+            Post Job
+          </Button>
+        ) : null
+      }
+    >
+      {tab === "jobs" && (
+        <JobsTab
+          jobs={jobs}
+          loading={loadingJobs}
+          onRefresh={loadJobs}
+          showToast={showToast}
+          showAddJob={showAddJob}
+          setShowAddJob={setShowAddJob}
+          onRefer={handleRefer}
+          selectedJob={selectedJob}
+          showRefer={showRefer}
+          setShowRefer={setShowRefer}
+          onJobAdded={loadJobs}
+        />
+      )}
+      {tab === "referrals" && (
+        <ReferralsTab
+          referrals={referrals}
+          loading={loadingRefs}
+          page={refPage}
+          setPage={handleRefPage}
+          onRefresh={() => loadReferrals(refPage)}
+          showToast={showToast}
+          userRole={isRecruiter ? "RECRUITER" : "EMPLOYEE"}
+        />
+      )}
+    </AppShell>
   );
 }
