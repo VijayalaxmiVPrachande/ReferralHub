@@ -6,9 +6,6 @@ target/
 .env
 .env.local
 *.env
-# Profile-specific properties with real credentials (use .env.example as template)
-backend/src/main/resources/application-dev.properties
-backend/src/main/resources/application-prod.properties
 
 # Uploads
 uploads/*
